@@ -179,9 +179,11 @@ const bitboard_t bitboard_around_corner
 bitboard_t genmove(bitboard_t black, bitboard_t white) {
     constexpr int inf = 1e9+7;
     return negaalpha_move(black, white, - inf, inf, 8, [](bitboard_t black, bitboard_t white) {
+        int turn = bitboard_popcount(black | white);
         int score = 0;
         score += bitboard_popcount(black) * 1000;
         score -= bitboard_popcount(white) * 1000;
+        if (turn > 64 - 6) return score;
         score += bitboard_popcount(black & bitboard_corner) * 50000;
         score -= bitboard_popcount(white & bitboard_corner) * 50000;
         score -= bitboard_popcount(black & bitboard_around_corner) * 10000;
@@ -260,8 +262,35 @@ int main() {
             bitboard_t mobility = get_mobility(black, white);
             cout << "= " << show_bitboard(black, white, mobility) << endl;
 
-        // setboard board
-        } else if (command == "setboard") {
+        // ext/showboard
+        } else if (command == "ext/showboard") {
+            string s;
+            repeat (y, 8) {
+                repeat (x, 8) {
+                    char c = '-';
+                    if (black & to_bitboard(y, x)) {
+                        c = '*';
+                    } else if (white & to_bitboard(y, x)) {
+                        c = 'O';
+                    }
+                    s += c;
+                }
+            }
+            cout << "= " << s << endl;
+
+        // ext/ispass
+        } else if (command == "ext/ispass") {
+            string color; iss >> color;
+            if (not swap_by_color_string(black, white, color)) {
+                cout << "? syntax error (wrong color)" << endl;
+                continue;
+            }
+            bool is_pass = not get_mobility(black, white);
+            swap_by_color_string(black, white, color);
+            cout << "= " << (is_pass ? "true" : "false") << endl;
+
+        // ext/setboard board
+        } else if (command == "ext/setboard") {
             string board; iss >> board;
             if (board.size() != 64
                     or count_if(whole(board), [](char c) { return c == '*' or c == 'O' or c == '-'; }) != 64) {
